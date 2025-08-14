@@ -30,4 +30,9 @@ export class FlowsController {
   remove(@Param('id') id: string) {
     return this.flowsService.remove(+id);
   }
+
+  @Post(':id/execute')
+  execute(@Param('id') id: string, @Body() executionData?: any) {
+    return this.flowsService.execute(+id, executionData);
+  }
 }
