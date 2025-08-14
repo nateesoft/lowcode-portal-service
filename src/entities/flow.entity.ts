@@ -18,6 +18,9 @@ export class Flow {
   @Column({ default: 'draft' })
   status: string;
 
+  @Column({ default: '1.0.0' })
+  version: string;
+
   @ManyToOne(() => User)
   createdBy: User;
 
