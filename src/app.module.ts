@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './modules/users/users.module';
 import { FlowsModule } from './modules/flows/flows.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { NodeContentModule } from './modules/node-content/node-content.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AuthModule } from './modules/auth/auth.module';
     UsersModule,
     FlowsModule,
     AuthModule,
+    NodeContentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
