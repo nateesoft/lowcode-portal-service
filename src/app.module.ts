@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './modules/users/users.module';
@@ -10,6 +11,7 @@ import { NodeContentModule } from './modules/node-content/node-content.module';
 import { ComponentsModule } from './modules/components/components.module';
 import { PagesModule } from './modules/pages/pages.module';
 import { MyProjectsModule } from './modules/my-projects/my-projects.module';
+import { NotesModule } from './modules/notes/notes.module';
 
 @Module({
   imports: [
@@ -17,6 +19,7 @@ import { MyProjectsModule } from './modules/my-projects/my-projects.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -39,6 +42,7 @@ import { MyProjectsModule } from './modules/my-projects/my-projects.module';
     ComponentsModule,
     PagesModule,
     MyProjectsModule,
+    NotesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
