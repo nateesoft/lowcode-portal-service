@@ -86,6 +86,18 @@ export class CreateMyProjectDto {
 
   @IsOptional()
   @IsObject()
+  designSettings?: {
+    primaryFont?: string;
+    customFont?: string;
+    colorTheme?: string;
+    multiLanguage?: boolean;
+    authProvider?: string;
+    alertTemplate?: string;
+    datePickerStyle?: string;
+  };
+
+  @IsOptional()
+  @IsObject()
   assets?: {
     logo?: string;
     favicon?: string;

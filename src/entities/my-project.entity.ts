@@ -111,6 +111,18 @@ export class MyProject {
     };
   };
 
+  // Design settings from modal
+  @Column('json', { nullable: true, name: 'design_settings' })
+  designSettings?: {
+    primaryFont?: string;
+    customFont?: string;
+    colorTheme?: string;
+    multiLanguage?: boolean;
+    authProvider?: string;
+    alertTemplate?: string;
+    datePickerStyle?: string;
+  };
+
   // Project assets and resources
   @Column('json', { nullable: true })
   assets?: {
