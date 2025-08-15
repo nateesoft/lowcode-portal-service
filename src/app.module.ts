@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { FlowsModule } from './modules/flows/flows.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { NodeContentModule } from './modules/node-content/node-content.module';
+import { ComponentsModule } from './modules/components/components.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { NodeContentModule } from './modules/node-content/node-content.module';
     FlowsModule,
     AuthModule,
     NodeContentModule,
+    ComponentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
