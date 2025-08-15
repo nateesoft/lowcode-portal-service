@@ -5,3 +5,5 @@ export { NodeContent } from './node-content.entity';
 export { NodeContentHistory } from './node-content-history.entity';
 export { Component } from './component.entity';
 export { ComponentHistory } from './component-history.entity';
+export { Page } from './page.entity';
+export { PageHistory } from './page-history.entity';
