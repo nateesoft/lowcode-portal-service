@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
 import { User } from './user.entity';
+import { FlowHistory } from './flow-history.entity';
 
 @Entity('flows')
 export class Flow {
@@ -29,4 +30,8 @@ export class Flow {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  // Relations
+  @OneToMany(() => FlowHistory, history => history.flow)
+  history: FlowHistory[];
 }
