@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../../entities/user.entity';
@@ -11,10 +12,26 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ user: Partial<User>; message: string }> {
-    const { email, password, firstName, lastName } = registerDto;
+  private async generateTokens(user: User): Promise<{ access_token: string; refresh_token: string }> {
+    const payload = { 
+      sub: user.id, 
+      email: user.email, 
+      firstName: user.firstName, 
+      lastName: user.lastName,
+      role: user.role 
+    };
+    
+    const access_token = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
+    
+    return { access_token, refresh_token };
+  }
+
+  async register(registerDto: RegisterDto): Promise<{ user: Partial<User>; tokens: { access_token: string; refresh_token: string }; message: string }> {
+    const { email, password, firstName, lastName, role } = registerDto;
 
     const existingUser = await this.usersRepository.findOne({ where: { email } });
     if (existingUser) {
@@ -29,19 +46,22 @@ export class AuthService {
       password: hashedPassword,
       firstName,
       lastName,
+      role: role || 'user',
     });
 
     const savedUser = await this.usersRepository.save(user);
 
     const { password: _, ...userWithoutPassword } = savedUser;
+    const tokens = await this.generateTokens(savedUser);
     
     return {
       user: userWithoutPassword,
+      tokens,
       message: 'User registered successfully'
     };
   }
 
-  async login(loginDto: LoginDto): Promise<{ user: Partial<User>; message: string }> {
+  async login(loginDto: LoginDto): Promise<{ user: Partial<User>; tokens: { access_token: string; refresh_token: string }; message: string }> {
     const { email, password } = loginDto;
 
     const user = await this.usersRepository.findOne({ where: { email } });
@@ -55,10 +75,42 @@ export class AuthService {
     }
 
     const { password: _, ...userWithoutPassword } = user;
+    const tokens = await this.generateTokens(user);
     
     return {
       user: userWithoutPassword,
+      tokens,
       message: 'Login successful'
     };
+  }
+
+  async validateUser(payload: any): Promise<User | null> {
+    const user = await this.usersRepository.findOne({ where: { id: payload.sub } });
+    return user || null;
+  }
+
+  async refreshToken(refreshToken: string): Promise<{ access_token: string }> {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      const user = await this.usersRepository.findOne({ where: { id: payload.sub } });
+      
+      if (!user) {
+        throw new UnauthorizedException('Invalid token');
+      }
+
+      const newPayload = { 
+        sub: user.id, 
+        email: user.email, 
+        firstName: user.firstName, 
+        lastName: user.lastName,
+        role: user.role 
+      };
+      
+      const access_token = this.jwtService.sign(newPayload, { expiresIn: '15m' });
+      
+      return { access_token };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 }
