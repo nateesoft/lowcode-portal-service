@@ -30,6 +30,10 @@ export class CreateServiceDto {
 
   @IsOptional()
   @IsString()
+  serviceType?: string;
+
+  @IsOptional()
+  @IsString()
   changeDescription?: string;
 
   @IsNumber()

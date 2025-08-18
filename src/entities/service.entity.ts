@@ -27,6 +27,9 @@ export class Service {
   @Column({ default: false })
   isActive: boolean;
 
+  @Column({ length: 50, default: 'REST_API' })
+  serviceType: string;
+
   @Column({ type: 'text', nullable: true })
   changeDescription: string;
 
