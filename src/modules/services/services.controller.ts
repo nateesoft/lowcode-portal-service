@@ -13,10 +13,8 @@ import {
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('services')
-@UseGuards(JwtAuthGuard)
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 

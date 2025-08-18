@@ -9,3 +9,7 @@ export { Page } from './page.entity';
 export { PageHistory } from './page-history.entity';
 export { Note } from './note.entity';
 export { Service } from './service.entity';
+export { MyProject } from './my-project.entity';
+export { WorkFlow } from './work-flow.entity';
+export { WorkFlowNode } from './work-flow-node.entity';
+export { WorkFlowHistory } from './work-flow-history.entity';
