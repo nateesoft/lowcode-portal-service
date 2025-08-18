@@ -13,6 +13,7 @@ import { PagesModule } from './modules/pages/pages.module';
 import { MyProjectsModule } from './modules/my-projects/my-projects.module';
 import { NotesModule } from './modules/notes/notes.module';
 import { ServicesModule } from './modules/services/services.module';
+import { UserGroupsModule } from './modules/user-groups/user-groups.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ServicesModule } from './modules/services/services.module';
     MyProjectsModule,
     NotesModule,
     ServicesModule,
+    UserGroupsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
