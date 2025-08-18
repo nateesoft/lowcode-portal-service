@@ -12,6 +12,7 @@ import { ComponentsModule } from './modules/components/components.module';
 import { PagesModule } from './modules/pages/pages.module';
 import { MyProjectsModule } from './modules/my-projects/my-projects.module';
 import { NotesModule } from './modules/notes/notes.module';
+import { ServicesModule } from './modules/services/services.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { NotesModule } from './modules/notes/notes.module';
     PagesModule,
     MyProjectsModule,
     NotesModule,
+    ServicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

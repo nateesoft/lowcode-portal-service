@@ -8,3 +8,4 @@ export { ComponentHistory } from './component-history.entity';
 export { Page } from './page.entity';
 export { PageHistory } from './page-history.entity';
 export { Note } from './note.entity';
+export { Service } from './service.entity';
