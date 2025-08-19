@@ -24,8 +24,12 @@ export class AuthService {
       role: user.role 
     };
     
-    const access_token = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const access_token = this.jwtService.sign(payload, { 
+      expiresIn: process.env.JWT_EXPIRES_IN || '24h' 
+    });
+    const refresh_token = this.jwtService.sign(payload, { 
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' 
+    });
     
     return { access_token, refresh_token };
   }
@@ -106,7 +110,9 @@ export class AuthService {
         role: user.role 
       };
       
-      const access_token = this.jwtService.sign(newPayload, { expiresIn: '15m' });
+      const access_token = this.jwtService.sign(newPayload, { 
+        expiresIn: process.env.JWT_EXPIRES_IN || '24h' 
+      });
       
       return { access_token };
     } catch (error) {

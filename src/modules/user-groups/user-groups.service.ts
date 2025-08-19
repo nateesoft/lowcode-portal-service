@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserGroup } from '../../entities/user-group.entity';
 import { User } from '../../entities/user.entity';
+import { MyProject } from '../../entities/my-project.entity';
 import { CreateUserGroupDto } from './dto/create-user-group.dto';
 import { UpdateUserGroupDto } from './dto/update-user-group.dto';
 import { AddMembersDto } from './dto/add-members.dto';
@@ -14,6 +15,8 @@ export class UserGroupsService {
     private userGroupRepository: Repository<UserGroup>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(MyProject)
+    private myProjectRepository: Repository<MyProject>,
   ) {}
 
   async create(createUserGroupDto: CreateUserGroupDto, createdById: number): Promise<UserGroup> {
@@ -39,6 +42,7 @@ export class UserGroupsService {
       .createQueryBuilder('userGroup')
       .leftJoinAndSelect('userGroup.createdBy', 'createdBy')
       .leftJoinAndSelect('userGroup.members', 'members')
+      .leftJoinAndSelect('userGroup.project', 'project')
       .orderBy('userGroup.createdAt', 'DESC');
 
     if (createdById) {
@@ -53,6 +57,7 @@ export class UserGroupsService {
       .createQueryBuilder('userGroup')
       .leftJoinAndSelect('userGroup.createdBy', 'createdBy')
       .leftJoinAndSelect('userGroup.members', 'members')
+      .leftJoinAndSelect('userGroup.project', 'project')
       .where('userGroup.id = :id', { id })
       .getOne();
 

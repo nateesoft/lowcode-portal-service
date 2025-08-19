@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsBoolean, IsNumber } from 'class-validator';
 
 export class UpdateUserGroupDto {
   @IsOptional()
@@ -31,4 +31,8 @@ export class UpdateUserGroupDto {
   @IsOptional()
   @IsBoolean()
   isSystem?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  projectId?: number;
 }

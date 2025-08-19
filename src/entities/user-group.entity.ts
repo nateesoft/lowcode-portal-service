@@ -10,6 +10,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { MyProject } from './my-project.entity';
 
 @Entity('user_groups')
 export class UserGroup {
@@ -43,6 +44,9 @@ export class UserGroup {
   @Column()
   createdById: number;
 
+  @Column({ nullable: true })
+  projectId: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -53,6 +57,10 @@ export class UserGroup {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'createdById' })
   createdBy: User;
+
+  @ManyToOne(() => MyProject, { nullable: true })
+  @JoinColumn({ name: 'projectId' })
+  project: MyProject;
 
   @ManyToMany(() => User)
   @JoinTable({
