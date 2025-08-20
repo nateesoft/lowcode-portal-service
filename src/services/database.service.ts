@@ -357,7 +357,7 @@ export class DatabaseService {
         tablesQuery = `
           SELECT 
             table_name as name,
-            table_schema as schema,
+            table_schema as \`schema\`,
             table_rows as row_count,
             round(((data_length + index_length) / 1024 / 1024), 2) as size_mb,
             table_comment as comment
@@ -374,7 +374,7 @@ export class DatabaseService {
             0 as size_mb,
             '' as comment
           FROM pg_tables 
-          WHERE schemaname = 'public'
+          WHERE schemaname NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
         `;
         break;
       default:
@@ -431,17 +431,30 @@ export class DatabaseService {
       case DatabaseType.POSTGRESQL:
         columnsQuery = `
           SELECT 
-            column_name as name,
-            data_type as type,
-            is_nullable = 'YES' as nullable,
-            column_default as default_value,
-            false as is_primary,
-            false as is_index,
-            character_maximum_length as length,
+            c.column_name as name,
+            c.data_type as type,
+            c.is_nullable = 'YES' as nullable,
+            c.column_default as default_value,
+            CASE WHEN tc.constraint_type = 'PRIMARY KEY' THEN true ELSE false END as is_primary,
+            CASE WHEN i.indexname IS NOT NULL THEN true ELSE false END as is_index,
+            c.character_maximum_length as length,
             '' as comment
-          FROM information_schema.columns 
-          WHERE table_name = '${tableName}'
-          ORDER BY ordinal_position
+          FROM information_schema.columns c
+          LEFT JOIN information_schema.table_constraints tc 
+            ON c.table_name = tc.table_name 
+            AND c.table_schema = tc.table_schema
+            AND tc.constraint_type = 'PRIMARY KEY'
+          LEFT JOIN information_schema.key_column_usage kcu 
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+            AND c.column_name = kcu.column_name
+          LEFT JOIN pg_indexes i 
+            ON c.table_name = i.tablename 
+            AND c.table_schema = i.schemaname
+            AND i.indexdef LIKE '%' || c.column_name || '%'
+          WHERE c.table_name = '${tableName}'
+            AND c.table_schema NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+          ORDER BY c.ordinal_position
         `;
         break;
       default:
