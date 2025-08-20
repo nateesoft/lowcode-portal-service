@@ -14,6 +14,7 @@ import { MyProjectsModule } from './modules/my-projects/my-projects.module';
 import { NotesModule } from './modules/notes/notes.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UserGroupsModule } from './modules/user-groups/user-groups.module';
+import { SecretKeysModule } from './modules/secret-keys/secret-keys.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { UserGroupsModule } from './modules/user-groups/user-groups.module';
     NotesModule,
     ServicesModule,
     UserGroupsModule,
+    SecretKeysModule,
   ],
   controllers: [AppController],
   providers: [AppService],
