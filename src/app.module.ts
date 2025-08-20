@@ -15,6 +15,7 @@ import { NotesModule } from './modules/notes/notes.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UserGroupsModule } from './modules/user-groups/user-groups.module';
 import { SecretKeysModule } from './modules/secret-keys/secret-keys.module';
+import { DatabaseModule } from './modules/database.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { SecretKeysModule } from './modules/secret-keys/secret-keys.module';
     ServicesModule,
     UserGroupsModule,
     SecretKeysModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
