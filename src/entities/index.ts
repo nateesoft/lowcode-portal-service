@@ -14,3 +14,5 @@ export { MyProject } from './my-project.entity';
 export { WorkFlow } from './work-flow.entity';
 export { WorkFlowNode } from './work-flow-node.entity';
 export { WorkFlowHistory } from './work-flow-history.entity';
+export { MediaFile } from './media-file.entity';
+export { MediaFolder } from './media-folder.entity';

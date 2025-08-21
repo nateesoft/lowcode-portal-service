@@ -16,6 +16,7 @@ import { ServicesModule } from './modules/services/services.module';
 import { UserGroupsModule } from './modules/user-groups/user-groups.module';
 import { SecretKeysModule } from './modules/secret-keys/secret-keys.module';
 import { DatabaseModule } from './modules/database.module';
+import { MediaModule } from './modules/media/media.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { DatabaseModule } from './modules/database.module';
     UserGroupsModule,
     SecretKeysModule,
     DatabaseModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
