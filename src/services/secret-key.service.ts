@@ -1,26 +1,59 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SecretKey, SecretKeyType } from '../entities/secret-key.entity';
 import { CreateSecretKeyDto, UpdateSecretKeyDto, SecretKeyResponseDto, SecretKeyListResponseDto } from '../dto/secret-key.dto';
+import { VaultService } from './vault.service';
 
 @Injectable()
 export class SecretKeyService {
+  private readonly logger = new Logger(SecretKeyService.name);
+
   constructor(
     @InjectRepository(SecretKey)
     private secretKeyRepository: Repository<SecretKey>,
+    private vaultService: VaultService,
   ) {}
 
   async create(createDto: CreateSecretKeyDto, userId: number): Promise<SecretKeyResponseDto> {
+    // Try to store in Vault first
+    const useVault = await this.vaultService.shouldUseVault();
+    let vaultPath: string | null = null;
+    
+    if (useVault) {
+      try {
+        vaultPath = this.vaultService.generateSecretPath(userId, createDto.name);
+        await this.vaultService.createSecret(vaultPath, {
+          name: createDto.name,
+          description: createDto.description,
+          value: createDto.value,
+          type: createDto.type,
+          tags: createDto.tags,
+          metadata: createDto.metadata || {}
+        });
+        this.logger.log(`Secret stored in Vault at path: ${vaultPath}`);
+      } catch (error) {
+        this.logger.warn(`Failed to store in Vault, falling back to database:`, error.message);
+        vaultPath = null;
+      }
+    }
+
+    // Create database record (with or without vault reference)
     const secretKey = this.secretKeyRepository.create({
       ...createDto,
+      value: vaultPath ? `vault:${vaultPath}` : createDto.value, // Store vault path reference if using vault
       createdBy: userId,
       isActive: createDto.isActive ?? true,
       expiresAt: createDto.expiresAt ? new Date(createDto.expiresAt) : undefined,
+      metadata: {
+        ...createDto.metadata,
+        storedInVault: !!vaultPath,
+        vaultPath: vaultPath || undefined
+      }
     });
 
     const saved = await this.secretKeyRepository.save(secretKey);
-    return this.toResponseDto(saved);
+    return this.toResponseDto(saved, useVault);
   }
 
   async findAll(userId: number): Promise<SecretKeyListResponseDto[]> {
@@ -44,7 +77,8 @@ export class SecretKeyService {
     // Update access tracking
     await this.updateAccessTracking(secretKey);
 
-    return this.toResponseDto(secretKey);
+    const useVault = await this.vaultService.shouldUseVault();
+    return this.toResponseDto(secretKey, useVault);
   }
 
   async update(id: number, updateDto: UpdateSecretKeyDto, userId: number): Promise<SecretKeyResponseDto> {
@@ -55,6 +89,10 @@ export class SecretKeyService {
     if (!secretKey) {
       throw new NotFoundException('Secret key not found');
     }
+
+    const useVault = await this.vaultService.shouldUseVault();
+    const isStoredInVault = secretKey.metadata?.storedInVault;
+    const vaultPath = secretKey.metadata?.vaultPath;
 
     // Handle rotation history if value is being updated
     if (updateDto.value && updateDto.value !== secretKey.value) {
@@ -69,6 +107,28 @@ export class SecretKeyService {
       currentHistory.push(rotationEntry);
       
       secretKey.rotationHistory = JSON.stringify(currentHistory);
+
+      // Update in Vault if stored there
+      if (useVault && isStoredInVault && vaultPath) {
+        try {
+          await this.vaultService.updateSecret(vaultPath, {
+            value: updateDto.value,
+            name: updateDto.name || secretKey.name,
+            description: updateDto.description || secretKey.description,
+            type: updateDto.type || secretKey.type,
+            tags: updateDto.tags || secretKey.tags,
+            metadata: {
+              ...secretKey.metadata,
+              ...updateDto.metadata,
+              lastUpdated: new Date().toISOString()
+            }
+          });
+          this.logger.log(`Secret updated in Vault at path: ${vaultPath}`);
+        } catch (error) {
+          this.logger.error(`Failed to update secret in Vault: ${error.message}`);
+          // Continue with database update even if Vault fails
+        }
+      }
     }
 
     Object.assign(secretKey, {
@@ -77,7 +137,7 @@ export class SecretKeyService {
     });
 
     const updated = await this.secretKeyRepository.save(secretKey);
-    return this.toResponseDto(updated);
+    return this.toResponseDto(updated, useVault);
   }
 
   async remove(id: number, userId: number): Promise<void> {
@@ -87,6 +147,21 @@ export class SecretKeyService {
 
     if (!secretKey) {
       throw new NotFoundException('Secret key not found');
+    }
+
+    const useVault = await this.vaultService.shouldUseVault();
+    const isStoredInVault = secretKey.metadata?.storedInVault;
+    const vaultPath = secretKey.metadata?.vaultPath;
+
+    // Remove from Vault if stored there
+    if (useVault && isStoredInVault && vaultPath) {
+      try {
+        await this.vaultService.deleteSecret(vaultPath);
+        this.logger.log(`Secret deleted from Vault at path: ${vaultPath}`);
+      } catch (error) {
+        this.logger.error(`Failed to delete secret from Vault: ${error.message}`);
+        // Continue with database deletion even if Vault fails
+      }
     }
 
     await this.secretKeyRepository.remove(secretKey);
@@ -156,7 +231,8 @@ export class SecretKeyService {
 
     secretKey.isActive = false;
     const updated = await this.secretKeyRepository.save(secretKey);
-    return this.toResponseDto(updated);
+    const useVault = await this.vaultService.shouldUseVault();
+    return this.toResponseDto(updated, useVault);
   }
 
   async activate(id: number, userId: number): Promise<SecretKeyResponseDto> {
@@ -170,7 +246,8 @@ export class SecretKeyService {
 
     secretKey.isActive = true;
     const updated = await this.secretKeyRepository.save(secretKey);
-    return this.toResponseDto(updated);
+    const useVault = await this.vaultService.shouldUseVault();
+    return this.toResponseDto(updated, useVault);
   }
 
   private async updateAccessTracking(secretKey: SecretKey): Promise<void> {
@@ -190,12 +267,26 @@ export class SecretKeyService {
     return value.substring(0, 4) + '••••••••' + value.substring(value.length - 4);
   }
 
-  private toResponseDto(secretKey: SecretKey): SecretKeyResponseDto {
+  private async toResponseDto(secretKey: SecretKey, useVault: boolean = false): Promise<SecretKeyResponseDto> {
+    let actualValue = secretKey.value;
+    
+    // If value is stored in Vault, retrieve it
+    if (useVault && secretKey.value?.startsWith('vault:')) {
+      const vaultPath = secretKey.value.replace('vault:', '');
+      try {
+        const vaultSecret = await this.vaultService.getSecret(vaultPath);
+        actualValue = vaultSecret?.data?.value || secretKey.value;
+      } catch (error) {
+        this.logger.warn(`Failed to retrieve secret from Vault: ${error.message}`);
+        // Fall back to the stored value (which might be the vault path)
+      }
+    }
+
     return {
       id: secretKey.id,
       name: secretKey.name,
       description: secretKey.description || '',
-      value: secretKey.value,
+      value: actualValue,
       type: secretKey.type,
       expiresAt: secretKey.expiresAt?.toISOString(),
       tags: secretKey.tags || [],
