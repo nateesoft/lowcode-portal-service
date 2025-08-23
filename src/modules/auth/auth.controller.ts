@@ -34,4 +34,14 @@ export class AuthController {
   verify(@Req() req: any) {
     return { valid: true, user: req.user };
   }
+
+  @Post('keycloak-sync')
+  async keycloakSync(@Body() keycloakData: any) {
+    return this.authService.syncKeycloakUser(keycloakData);
+  }
+
+  @Post('logout')
+  async logout(@Req() req: any) {
+    return { message: 'Logout successful' };
+  }
 }

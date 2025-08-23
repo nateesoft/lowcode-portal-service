@@ -119,4 +119,32 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
+
+  async syncKeycloakUser(keycloakData: any): Promise<{ user: Partial<User>; tokens: { access_token: string; refresh_token: string }; message: string }> {
+    const { preferred_username, email, given_name, family_name, sub } = keycloakData;
+
+    let user = await this.usersRepository.findOne({ where: { email } });
+    
+    if (!user) {
+      // Create new user from Keycloak data
+      user = this.usersRepository.create({
+        email: email,
+        firstName: given_name || preferred_username,
+        lastName: family_name || '',
+        role: 'user',
+        password: '', // No password needed for Keycloak users
+      });
+      
+      user = await this.usersRepository.save(user);
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+    const tokens = await this.generateTokens(user);
+    
+    return {
+      user: userWithoutPassword,
+      tokens,
+      message: 'Keycloak sync successful'
+    };
+  }
 }
